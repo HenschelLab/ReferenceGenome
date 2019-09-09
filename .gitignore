@@ -1,0 +1,5 @@
+tmp.fa
+JobOutputs/*.err
+JobOutputs/*.out
+*~
+hg19_chrY.fasta.gz

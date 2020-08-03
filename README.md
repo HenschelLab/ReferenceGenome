@@ -1,32 +1,39 @@
-# Results
-alignment statistics coverage
-Joint genotyping
-29M 
+# UAE reference construction and testing
+Python and shell script collection.
+The pipeline is assumed to run on a high performance computing (HPC) facility. Ours runs CentOS on all nodes. Parallelization is per genome, i.e the command line argument is some identifier that either explicitly or implicitely serves as sample id.
+central classes
+
+## Dependencies:
+GATK requires a number of additional support files, including a reference genome (indexed).
+We use hg19, and locate it as per configuration in pipeline.py.
+We use GATK version 4.0.6.0 and Python 3.6+. In addition, Anaconda environments are used.
+
+## Assumptions
+Various assumptions regarding the naming conventions of input data are made. See configuration part in `pipeline.py`.
+
+## Pipeline
+
+Pipeline to construct single sample (g)vcf:
+`pipeline.py`
+* Variant calling
+* QC: FastQC, possibly before and certainly after trimming
+* Trimmomatic
+* Pipeline - HPC
+* Quality control
+
+* GVCF 
+* Joint genotype calling with Combined VCF
 
 
-# Methods
+### Methods Details
 
-Reference Genome construction for the UAE
+Raw data provided is expected in some rawdata dir as per configuration in pipeline.py
 
-Raw data provided in some raw data dir
+The ipeline version that deals with Whole Exomes is `pipeline_WES.py`.
+Requires exonic regions mapping file as per configuration in that script (see global variable TR).
+WES follows same coordinate system as WGS, thus efforts are combinable.
 
-pipeline to construct single sample (g)vcf:
-
-
-
-Variant calling
-Trimmomatic
-Pipeline - HPC
-Quality control
-
-GVCF - advantages
-Combined VCF
-
-
-exonic regions mapping file - pipeline_WES.py
-same coordinate system thus combinable
-
-# Filtering VQSR 
+### Filtering VQSR 
 genomes + exomes integrate 
 
 Use GenomicsDB, Joint genotype calling, requires parallelization along genome regions due 
@@ -37,9 +44,11 @@ to its computational expenses - split by 10Mbp
 variant stats
 novel variants
 
-#UAE reference construction and testing
-GATK
-Joint Genotype calling
+
+# Results
+alignment statistics coverage
+Joint genotyping
+29M variant loci discovered.
 
 ### Variant reduction (reference hg19 vs UAE):
 We compare the number of called variants with respect to two reference genome: 1. hg19 and 2. our own (UAERG).
@@ -47,7 +56,7 @@ The call stats are produced with a simple shell (bash) script, `gatherNrVariants
 
 Lists the number of variants for selected genomes, once for reference 
 `run concatVariantStats.py`
-which generates a single summary spreadsheet (variantResults.csv)
+which generates a single summary spreadsheet (variantResults.csv), what eventually is reported as Table 3 in the manuscript.
 
 `         12723R    12723U    12753R    12753U    12801R    12801U    12811R    12811U   12723D  12723Dpct   12753D  12753Dpct 
 chr1   402961.0  323321.0  405401.0  321405.0  392219.0  308402.0  402864.0  320065.0  79640.0  19.763699  83996.0  20.719238 

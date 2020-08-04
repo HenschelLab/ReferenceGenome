@@ -1,4 +1,4 @@
-ls
+
 import os, sys
 import subprocess
 import re, glob
@@ -18,14 +18,14 @@ import time
 ## Example use:  gatk --java-options "-Xmx8G" HaplotypeCaller -R reference.fasta -I input.bam -O output.vcf
 ## they possibly need to be re-indexed :'-(
 ## gatk IndexFeatureFile -F *.vcf (doesn't seem to work with zipped
-## gatk ValidateSamFile -I 10187_1_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam
+
 
 def extractLane(fname): return re.findall('_L\d\d\d_', os.path.basename(fname))[-1].strip()[-2]
 
 ## Global variable setting
 if True:
-    outdir = "/research/btc_bioinformatic/operations/scratch_WES/"
-    tmpdir = "/research/btc_bioinformatic/operations/scratch_WES/tmp/"
+    outdir = "/research/btc_bioinformatic/operations/scratch/"
+    tmpdir = "/research/btc_bioinformatic/operations/scratch/tmp/"
     
     applicationDir = '/research/btc_bioinformatic/operations/'
     rawData = '/research/btc_bioinformatic/results/'
@@ -35,14 +35,14 @@ if True:
     G1000_snps = "%s/1000G_phase1.snps.high_confidence.hg19.sites.vcf"% resourceDir
     Hapmap = "%s/hapmap_3.3.hg19.sites.vcf"% resourceDir
     Omni = "%s/1000G_omni2.5.hg19.sites.vcf"% resourceDir
-    dbsnp = "%s/dbsnp_138.hg19.vcf"% resourceDir  # we should change to a most recent dbsnp
-    TR = "%s/truseq-exome-targeted-regions-manifest-v1-2a.bed"% resourceDir  # Target region for sequencing
+    dbsnp = "%s/dbsnp_138.hg19.vcf"% resourceDir  # could change to a most recent dbsnp
+    TR = "%s/truseq-exome-targeted-regions-manifest-v1-2a.bed"% resourceDir  # Target region for sequencing WES
     jobOutputDir = '%s/Pipeline/JobOutputs' % applicationDir
-    #vcfFile = '/research/btc_bioinformatic/results/gathered_vcfs.vcf.gz'
+
 
     rawDataDir = '%s/WES_NF' % rawData
 
-    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, ## not a good location
+    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, 
                     'hg38':'%s/AuxData/hg38/Homo_sapiens_assembly38.fasta' % applicationDir}
 
 

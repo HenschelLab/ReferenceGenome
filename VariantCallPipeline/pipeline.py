@@ -14,21 +14,15 @@ import time
 
 ## Reference genome must be indexed (bwa -index)
 
-## Example use:  gatk --java-options "-Xmx8G" HaplotypeCaller -R reference.fasta -I input.bam -O output.vcf
-## they possibly need to be re-indexed :'-(
-## gatk IndexFeatureFile -F *.vcf (doesn't seem to work with zipped
-## gatk ValidateSamFile -I 10187_1_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam
 
 def extractLane(fname): return re.findall('_L\d\d\d_', os.path.basename(fname))[-1].strip()[-2]
 
 ## Global variable setting
 if True:
-    #outdir = "/research/btc_bioinformatic/operations/scratch/"
-    outdir = "/research/btc_bioinformatic/results/BatchMissingBams/"
+    outdir = "/research/btc_bioinformatic/operations/scratch/"
     tmpdir = "/research/btc_bioinformatic/operations/scratch/tmp/"
     
     applicationDir = '/research/btc_bioinformatic/operations/'
-   # applicationDir2 = '/research/gutsybugs/applications/'
     rawData = '/research/btc_bioinformatic/rawdata/'
     resourceDir = '/research/btc_bioinformatic/operations/data_masdar/'
     Mills = "%s/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf" % resourceDir
@@ -36,7 +30,7 @@ if True:
     G1000_snps = "%s/1000G_phase1.snps.high_confidence.hg19.sites.vcf"% resourceDir
     Hapmap = "%s/hapmap_3.3.hg19.sites.vcf"% resourceDir
     Omni = "%s/1000G_omni2.5.hg19.sites.vcf"% resourceDir
-    dbsnp = "%s/dbsnp_138.hg19.vcf"% resourceDir  # we should change to a most recent dbsnp
+    dbsnp = "%s/dbsnp_138.hg19.vcf"% resourceDir  
     jobOutputDir = '%s/Pipeline/JobOutputs' % applicationDir
 
     fastqcDir = "%s/FastQC" % applicationDir
@@ -46,15 +40,14 @@ if True:
     qualimapDir = "%s/qualimap_v2.2.1" % applicationDir
     rawDataDir = rawData + "/Batch%s" 
 
-    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, ## not a good location
+    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, 
                     'hg38':'%s/AuxData/hg38/Homo_sapiens_assembly38.fasta' % applicationDir}
 
 pipelineOrder = ['trimming', 'fastqc', 'bwa', 'SortSam', 'MergeBam', 'MarkDuplicates',
                  'qualimap', 'BuildBamIndex', 'BaseRecalibrator', 'ApplyBQSR', 'HaplotypeCaller']
 class Pipeline:
     ## static class variables
-
-    ## TODO check out spark version
+    
     ## Introduce Checkpoints for automated pipeline reruns
 
     def __init__(self, sampleNr=0, batch=0, refShort='hg19', singleLane=True, cleanup='asYouGo', sample=None, picardCmd='local'):
@@ -72,7 +65,7 @@ class Pipeline:
             else:
                 self.sample = sample
                 self.rawDataDir = '%s/%s'%(rawDataDir%batch,sample)
-        else: ## Local (Mariam's) samples
+        else: 
             self.rawDataDir = '/research/gutsybugs/applications/RD/WGS1/WGS%s' % sampleNr
             self.sample = self.determineSampleID(self.rawDataDir)
         print("Sample: %s"%self.sample)
@@ -102,7 +95,7 @@ class Pipeline:
         return sorted([ff for ff in fastqFiles0.decode().split('\n') if ff])
     def determineSampleID(self, dir):
         ## scraping the sample ID out of the subdirectory - relies heavily on naming convention!
-        fn = self.findFiles(dir)[0] ## not efficient!
+        fn = self.findFiles(dir)[0] 
         return fn[len(dir):].split('/')[2].split('-')[0]
     def fastQC(self, inputDir, outputDir, blocking=False):
         ## TODO: refactor against new Job class
@@ -113,7 +106,7 @@ class Pipeline:
             return
         threads = int(24/len(fastqFiles))
         processes = []
-        for ff in fastqFiles[:1]:   ## CHANGE!!!!
+        for ff in fastqFiles[:1]:   
             cmd = ['%s/%s' % (fastqcDir, 'fastqc'),'--threads=%d' % threads, '--outdir=%s'%outputDir, ff]
             print(" ".join(cmd))
             processes.append(subprocess.Popen(cmd))
@@ -128,11 +121,11 @@ class Pipeline:
     def trim(self, pattern="*.fastq.gz"):
         fastqFiles = self.findFiles(self.rawDataDir, pattern=pattern)
         jobs = []
-        for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]): ##  assume every 2. file is resp. reverse ## DOUBLE CHECK!!
+        for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]): ##  assume every 2. file is resp. reverse 
             outBasename    = os.path.basename(fastqFile)[:-9]
             outRevBasename = os.path.basename(reverse)[:-9]
 
-            ## TODO: move parameters up to a nice consolidated config section
+            
             trimmomaticCmd = ['java', '-Xmx32G', '-jar', '%s/trimmomatic-0.36.jar' % TrimmomaticsDir,
                               'PE', '-threads', '30', '-phred33',
                               fastqFile, reverse,
@@ -159,13 +152,13 @@ class Pipeline:
             else: lane = extractLane(fastqFile)
             samfilename = '%s/%s_%s_FR_%s.paired_aligned.sam' % (self.dirs['alignOutdir'], self.sample, lane, self.refShort)
             alignCmd = 'bwa mem -M -t 46 -R ' +\
-                        r'"@RG\tID:H23FY.%s\tSM:%s\tPL:Illumina\tLB:KustarWGS\tPU:GBGX2.%s" ' % (lane, self.sample, lane) +\
+                        r'"@RG\tID:ID.%s\tSM:%s\tPL:Illumina\tLB:KustarWGS\tPU:PU.%s" ' % (lane, self.sample, lane) +\
                         '%s %s %s'  % (self.ref, fastqFile, reverse)
             
             job = Job([alignCmd], run=False)
             if cleanup:
                 job.mark4cleanup(fastqFile, condition=samfilename)
-                job.mark4cleanup(reverse, condition=samfilename) ## delete maybe also unpaired.fastq.gz
+                job.mark4cleanup(reverse, condition=samfilename) 
             job.startProcess(stdout=samfilename)
             jobs.append(job)
 
@@ -176,7 +169,6 @@ class Pipeline:
     def sortSam(self, pattern="*.sam", blocking=False, jvmSpace=32,
                 jvmSpaceDivide=True):
         ## Requires picard module (that sets $PICARD)
-        ## This used to crash on occasion, non-reproducibly. Consider samtools sort if this persists
         jobs = []
         samFiles = self.findFiles(self.dirs['alignOutdir'], pattern=pattern)
         if jvmSpaceDivide: jvmSpace = int(jvmSpace / (len(samFiles)))
@@ -197,8 +189,8 @@ class Pipeline:
     def mergeBam(self, jvmSpace=32):
         bamFiles = self.findFiles(self.dirs['alignOutdir'], pattern="*_Sorted.bam")
         if len(bamFiles) == 1: ## if single Lane, simply rename/link so to keep name convention for next steps
-            mergedBamFile = bamFiles[0][:-4] + '_Merged.bam' ## prob. nicer with os.splitext
-            subprocess.Popen('mv %s %s' % (bamFiles[0], mergedBamFile), shell=True).wait() ## ln -s seems to be slow
+            mergedBamFile = bamFiles[0][:-4] + '_Merged.bam'
+            subprocess.Popen('mv %s %s' % (bamFiles[0], mergedBamFile), shell=True).wait()
             return []
         mergeCmd = ['java', '-Xmx32G', '-jar', self.picardCmd, 'MergeSamFiles', 'USE_THREADING=true']
         for bamFile in bamFiles:
@@ -227,7 +219,7 @@ class Pipeline:
             process.wait()
             print ("[PIPE:] Finished Qualimap")
             
-    def buildBamIndex(self, jvmSpace=32): ## quite quick (for 99)
+    def buildBamIndex(self, jvmSpace=32): 
         bamFile = self.findFiles(self.dirs['alignOutdir'], pattern="*_dedup.bam")[0]
         bbiCmd = ['java', '-Xmx%sG'%jvmSpace, '-jar', self.picardCmd, 'BuildBamIndex', 'I=%s'%bamFile]
         self.completedJobs.append(Job(bbiCmd))
@@ -260,7 +252,6 @@ class Pipeline:
     def haplotypeCaller(self, jvmSpace=32, filetype='gvcf', compress=True):
         self.filetype = filetype ## remember to set the filetype if haplotypeCaller is bypassed/omitted!!
 #        bamFile = self.findFiles(self.dirs['alignOutdir'], pattern="*_BQSR.bam")[0]
-#!!!!!!!!!!!!!!!!! Using different bam (skipping BQSR for comparing #variants vs UAE ref genome
         bamFile = self.findFiles(self.dirs['alignOutdir'], pattern="*_Merged_dedup.bam")[0] ## CHANGE!!!        
         output = '%s/%s_HaplotypeCaller.%s' %(self.dirs['gatkOutdir'], self.sample, filetype)
         if compress:
@@ -272,12 +263,11 @@ class Pipeline:
                   '-I', bamFile, '-O', output,
                   '--dbsnp', dbsnp, '--genotyping-mode', 'DISCOVERY']#-stand_call_conf 30
         if filetype=='gvcf':
-            recCmd.append('-ERC GVCF') ## this seems to cause trouble: "Values for DP annotation not detected for ANY training variant in the input callset. VariantAnnotator may be used to add these annotations" but could also be due to sparse genome in DP
+            recCmd.append('-ERC GVCF') 
         self.completedJobs.append(Job(recCmd, run=True, mark4del=(bamFile, output)))
 
     ## Sorted_merged_dedup_BQSR.vcf ->  Sorted_merged_dedup_BQSR.{recal.vcf, tranches, rplots.R} 
-    ## couldnt test this on "Genome 99": to few data points
-    ## TODO: Deal with gzipped files!
+    
     def variantRecalibrator(self, jvmSpace=32, mode='SNP', pattern="*_HaplotypeCaller"):
         vcfFile = self.findFiles(self.dirs['gatkOutdir'], pattern=pattern + '.' + self.filetype + self.zipped)[0]
         base = os.path.splitext(vcfFile)[0]
@@ -336,7 +326,7 @@ class Pipeline:
     def getLastCheckpoint(self):
         from restartPipe import getLastCheckpoint
         finishedJobs = getLastCheckpoint(self.sample)
-        if 'GATK' in finishedJobs: ## little hackish fix # should not happen, fix reporting!!!
+        if 'GATK' in finishedJobs: 
             gi = finishedJobs.index('GATK')
             finishedJobs = finishedJobs[:gi] + pipelineOrder[-3:][:len(finishedJobs[gi:gi+3])]
 
@@ -413,13 +403,13 @@ if __name__ == "__main__":
         pipe = Pipeline(sample=sample, batch=batch, refShort='hg19')     #refShort='hg38'
         
     restartFromCheckpoint = False ## set to False, if you want to start from the beginning
-    #lastSuccJobIdx = pipelineOrder.index('ApplyBQSR') ## Manual fix for Mariams samples CHANGE!!!!
+    #lastSuccJobIdx = pipelineOrder.index('ApplyBQSR') 
     lastSuccJobIdx = pipe.getLastCheckpoint() if restartFromCheckpoint else -1
     print ("lastSuccJobIdx: %s"%lastSuccJobIdx)
     if True:
 
         if pipelineOrder.index('trimming') > lastSuccJobIdx:
-            pipe.trim()  #pattern="*L002*.fastq.gz") ## example for just trimming lane2 files
+            pipe.trim()  
             pipe.report()
             pipe.fastQC(pipe.dirs['trimOutdir'], pipe.dirs['fastqOutdir'])
 
@@ -456,15 +446,11 @@ if __name__ == "__main__":
             pipe.applyBQSR()
             pipe.report()
 
-####
-        ##
         if pipelineOrder.index('HaplotypeCaller') > lastSuccJobIdx:
             pipe.haplotypeCaller(filetype='vcf')
             pipe.report()
             
     if False:
-        ## Before variant recal: need to do (hierarchical) combineGVCFs, GenotypeGVCFs -> VCF
-        ## see individual shell scripts: varRecal combineGVCFs.sh (runs into Walltime!!! -> do it hierarchically, see )
         pipe.filetype='gvcf'
         pipe.zipped = '.gz'
         pipe.variantRecalibrator() ## only works on proper VCF!!!

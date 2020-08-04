@@ -14,10 +14,6 @@ import time
 
 ## Reference genome must be indexed (bwa -index)
 
-## Example use:  gatk --java-options "-Xmx8G" HaplotypeCaller -R reference.fasta -I input.bam -O output.vcf
-## they possibly need to be re-indexed :'-(
-## gatk IndexFeatureFile -F *.vcf (doesn't seem to work with zipped
-## gatk ValidateSamFile -I 10187_1_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam
 
 def extractLane(fname): return re.findall('_L\d\d\d_', os.path.basename(fname))[-1].strip()[-2]
 
@@ -27,8 +23,6 @@ if True:
     tmpdir = "/research/btc_bioinformatic/operations/UaeRef/tmp/"
     
     applicationDir = '/research/btc_bioinformatic/operations/'
-   # applicationDir2 = '/research/gutsybugs/applications/'
-    ##rawData = '/research/btc_bioinformatic/rawdata/'
     rawData = '/research/btc_bioinformatic/operations/Recovery1/'
     resourceDir = '/research/btc_bioinformatic/operations/data_masdar/'
     Mills = "%s/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf" % resourceDir
@@ -36,7 +30,7 @@ if True:
     G1000_snps = "%s/1000G_phase1.snps.high_confidence.hg19.sites.vcf"% resourceDir
     Hapmap = "%s/hapmap_3.3.hg19.sites.vcf"% resourceDir
     Omni = "%s/1000G_omni2.5.hg19.sites.vcf"% resourceDir
-    dbsnp = "%s/dbsnp_138.hg19.vcf"% resourceDir  # we should change to a most recent dbsnp
+    dbsnp = "%s/dbsnp_138.hg19.vcf"% resourceDir  # could change to a most recent dbsnp
     jobOutputDir = '%s/Pipeline/JobOutputs' % applicationDir
 
     fastqcDir = "%s/FastQC" % applicationDir
@@ -46,18 +40,15 @@ if True:
     qualimapDir = "%s/qualimap_v2.2.1" % applicationDir
     rawDataDir = rawData  
 
-    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, ## not a good location
+    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, 
                     'hg19uae': '/research/btc_bioinformatic/results/AlleleFrequencies/hg19uae.fasta', 
                     'hg38':'%s/AuxData/hg38/Homo_sapiens_assembly38.fasta' % applicationDir}
 
-##pipelineOrder = ['trimming', 'fastqc', 'bwa', 'SortSam', 'MergeBam', 'MarkDuplicates',
-##                 'qualimap', 'BuildBamIndex',  'HaplotypeCaller']
+
 pipelineOrder = ['trimming', 'fastqc', 'bwa', 'SortSam', 'MergeBam', 'MarkDuplicates',
                  'qualimap', 'BuildBamIndex', 'BaseRecalibrator', 'ApplyBQSR', 'HaplotypeCaller']
 class Pipeline:
     ## static class variables
-
-    ## TODO check out spark version
     ## Introduce Checkpoints for automated pipeline reruns
 
     def __init__(self, sampleNr=0, batch=0, refShort='hg19', singleLane=True, cleanup='asYouGo', sample=None, picardCmd='local'):
@@ -75,7 +66,7 @@ class Pipeline:
             else:
                 self.sample = sample
                 self.rawDataDir = '%s/%s'%(rawDataDir,sample)
-        else: ## Local (Mariam's) samples
+        else: 
             self.rawDataDir = '/research/gutsybugs/applications/RD/WGS1/WGS%s' % sampleNr
             self.sample = self.determineSampleID(self.rawDataDir)
         print("Sample: %s"%self.sample)
@@ -105,10 +96,10 @@ class Pipeline:
         return sorted([ff for ff in fastqFiles0.decode().split('\n') if ff])
     def determineSampleID(self, dir):
         ## scraping the sample ID out of the subdirectory - relies heavily on naming convention!
-        fn = self.findFiles(dir)[0] ## not efficient!
+        fn = self.findFiles(dir)[0] 
         return fn[len(dir):].split('/')[2].split('-')[0]
     def fastQC(self, inputDir, outputDir, blocking=False):
-        ## TODO: refactor against new Job class
+        
         fastqFiles = self.findFiles(inputDir)
         print ("Dealing with %s fastqFiles" % len(fastqFiles))
         if len(fastqFiles) == 0:
@@ -116,7 +107,7 @@ class Pipeline:
             return
         threads = int(24/len(fastqFiles))
         processes = []
-        for ff in fastqFiles[:1]:   ## CHANGE!!!!
+        for ff in fastqFiles[:1]:
             cmd = ['%s/%s' % (fastqcDir, 'fastqc'),'--threads=%d' % threads, '--outdir=%s'%outputDir, ff]
             print(" ".join(cmd))
             processes.append(subprocess.Popen(cmd))
@@ -131,11 +122,9 @@ class Pipeline:
     def trim(self, pattern="*.fastq.gz"):
         fastqFiles = self.findFiles(self.rawDataDir, pattern=pattern)
         jobs = []
-        for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]): ##  assume every 2. file is resp. reverse ## DOUBLE CHECK!!
+        for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]): ##  assume every 2. file is resp. reverse 
             outBasename    = os.path.basename(fastqFile)[:-9]
             outRevBasename = os.path.basename(reverse)[:-9]
-
-            ## TODO: move parameters up to a nice consolidated config section
             trimmomaticCmd = ['java', '-Xmx32G', '-jar', '%s/trimmomatic-0.36.jar' % TrimmomaticsDir,
                               'PE', '-threads', '30', '-phred33',
                               fastqFile, reverse,
@@ -154,7 +143,7 @@ class Pipeline:
 
     ##paired.fastqz -> paired_aligned.sam
     def align(self, pattern="*.paired.fastq.gz", cleanup=True):
-        ## TODO: mapping unpaired?  if they make up for more than say 8%
+       
         fastqFiles = self.findFiles(self.dirs['trimOutdir'], pattern=pattern)
         jobs = []
         for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]):
@@ -162,7 +151,7 @@ class Pipeline:
             else: lane = extractLane(fastqFile)
             samfilename = '%s/%s_%s_FR_%s.paired_aligned.sam' % (self.dirs['alignOutdir'], self.sample, lane, self.refShort)
             alignCmd = 'bwa mem -M -t 46 -R ' +\
-                        r'"@RG\tID:H23FY.%s\tSM:%s\tPL:Illumina\tLB:KustarWGS\tPU:GBGX2.%s" ' % (lane, self.sample, lane) +\
+                        r'"@RG\tID:ID.%s\tSM:%s\tPL:Illumina\tLB:KustarWGS\tPU:PU.%s" ' % (lane, self.sample, lane) +\
                         '%s %s %s'  % (self.ref, fastqFile, reverse)
             
             job = Job([alignCmd], run=False)
@@ -179,7 +168,6 @@ class Pipeline:
     def sortSam(self, pattern="*.sam", blocking=False, jvmSpace=32,
                 jvmSpaceDivide=True):
         ## Requires picard module (that sets $PICARD)
-        ## This used to crash on occasion, non-reproducibly. Consider samtools sort if this persists
         jobs = []
         samFiles = self.findFiles(self.dirs['alignOutdir'], pattern=pattern)
         if jvmSpaceDivide: jvmSpace = int(jvmSpace / (len(samFiles)))
@@ -201,7 +189,7 @@ class Pipeline:
         bamFiles = self.findFiles(self.dirs['alignOutdir'], pattern="*_Sorted.bam")
         if len(bamFiles) == 1: ## if single Lane, simply rename/link so to keep name convention for next steps
             mergedBamFile = bamFiles[0][:-4] + '_Merged.bam' ## prob. nicer with os.splitext
-            subprocess.Popen('mv %s %s' % (bamFiles[0], mergedBamFile), shell=True).wait() ## ln -s seems to be slow
+            subprocess.Popen('mv %s %s' % (bamFiles[0], mergedBamFile), shell=True).wait() 
             return []
         mergeCmd = ['java', '-Xmx32G', '-jar', self.picardCmd, 'MergeSamFiles', 'USE_THREADING=true']
         for bamFile in bamFiles:
@@ -216,7 +204,7 @@ class Pipeline:
         bamFile = self.findFiles(self.dirs['alignOutdir'], pattern="*_Sorted_Merged.bam")[0]
         
         nrBamFile = bamFile[:-4] + '_dedup.bam' ## prob. nicer with os.splitext
-        metricsFile = bamFile[:-4] + '_metrics.txt' ## only works with local picard
+        metricsFile = bamFile[:-4] + '_metrics.txt' 
         dupCmd = ['java', '-Xmx%sG'%jvmSpace, '-jar', self.picardCmd, 'MarkDuplicates',
                   'I=%s'%bamFile, 'O=%s'%nrBamFile, 'REMOVE_DUPLICATES=true', 'M=%s'%metricsFile]
         self.completedJobs.append(Job(dupCmd, mark4del=(bamFile, nrBamFile)))
@@ -273,9 +261,9 @@ class Pipeline:
                   '-R', self.ref,
                   '-I', bamFile, '-O', output,
                   #'--dbsnp', dbsnp, ## does not work: hg19 vs hg19uae coords
-                  '--genotyping-mode', 'DISCOVERY']#-stand_call_conf 30
+                  '--genotyping-mode', 'DISCOVERY']
         if filetype=='gvcf':
-            recCmd.append('-ERC GVCF') ## this seems to cause trouble: "Values for DP annotation not detected for ANY training variant in the input callset. VariantAnnotator may be used to add these annotations" but could also be due to sparse genome in DP
+            recCmd.append('-ERC GVCF') 
         self.completedJobs.append(Job(recCmd, run=True, mark4del=(bamFile, output)))
 
 ## TODO    def variantSelection(self,
@@ -296,14 +284,13 @@ class Pipeline:
     def getLastCheckpoint(self):
         from restartPipe import getLastCheckpoint
         finishedJobs = getLastCheckpoint(self.sample)
-        if 'GATK' in finishedJobs: ## little hackish fix # should not happen, fix reporting!!!
+        if 'GATK' in finishedJobs: 
             gi = finishedJobs.index('GATK')
             finishedJobs = finishedJobs[:gi] + pipelineOrder[-3:][:len(finishedJobs[gi:gi+3])]
 
         try:
             lastJob = finishedJobs[-1]
-            if self.sample == '120233' and lastJob=='MergeBam':
-                lastJob = 'MarkDuplicates' ## Manual fix
+
             idx = pipelineOrder.index(lastJob)
             print ("Trying to pick up after %s (job idx: %s)"% (lastJob, idx))
             return idx
@@ -368,10 +355,10 @@ if __name__ == "__main__":
     print(sys.argv)
     if len(sys.argv[1]) < 3: ## interprete small numbers as job ids
         sampleNr = int(sys.argv[1])
-        pipe = Pipeline(sampleNr=sampleNr, refShort='hg19uae', singleLane=False) #refShort='hg38'
+        pipe = Pipeline(sampleNr=sampleNr, refShort='hg19uae', singleLane=False) 
     else: ## interprete 5 or 6digit numbers as sample ids## Also provide batch!!!
         sample, batch = sys.argv[-2:]        
-        pipe = Pipeline(sample=sample, batch=batch, refShort='hg19uae')     #refShort='hg38'
+        pipe = Pipeline(sample=sample, batch=batch, refShort='hg19uae')
         
     lastSuccJobIdx = pipe.getLastCheckpoint() if restartFromCheckpoint else -1
     #print ("lastSuccJobIdx: %s"%lastSuccJobIdx)
@@ -388,7 +375,7 @@ if __name__ == "__main__":
 
         ## PICARD
         if pipelineOrder.index('SortSam') > lastSuccJobIdx:
-            pipe.sortSam(jvmSpaceDivide=False) ## consider samtools sort instead, more stable?
+            pipe.sortSam(jvmSpaceDivide=False) 
             pipe.report()
 
         if pipelineOrder.index('MergeBam') > lastSuccJobIdx:

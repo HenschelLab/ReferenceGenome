@@ -14,10 +14,6 @@ import time
 
 ## Reference genome must be indexed (bwa -index)
 
-## Example use:  gatk --java-options "-Xmx8G" HaplotypeCaller -R reference.fasta -I input.bam -O output.vcf
-## they possibly need to be re-indexed :'-(
-## gatk IndexFeatureFile -F *.vcf (doesn't seem to work with zipped
-## gatk ValidateSamFile -I 10187_1_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam
 
 def extractLane(fname): return re.findall('_L\d\d\d_', os.path.basename(fname))[-1].strip()[-2]
 
@@ -45,7 +41,7 @@ if True:
     qualimapDir = "%s/qualimap_v2.2.1" % applicationDir
     rawDataDir = '%s/WES_NF' % rawData
 
-    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, ## not a good location
+    refDirLookup = {'hg19':'%s/data_masdar/ucsc.hg19.fasta' % applicationDir, 
                     'hg38':'%s/AuxData/hg38/Homo_sapiens_assembly38.fasta' % applicationDir}
 
 pipelineOrder = ['trimming', 'fastqc', 'bwa', 'SortSam', 'MergeBam', 'MarkDuplicates',
@@ -73,7 +69,7 @@ class Pipeline:
                 self.rawDataDir = '%s/%s'%(rawDataDir,sample)
         else: ## Local (Mariam's) samples
             if not sample is None:
-                self.rawDataDir = '/research/btc_bioinformatic/results/WES_NF/%s' % sample
+                self.rawDataDir = '/research/btc_bioinformatic/results/WES/%s' % sample
                 self.sample = sample
 
         print("Sample: %s"%self.sample)
@@ -129,11 +125,9 @@ class Pipeline:
     def trim(self, pattern="*.fastq.gz"):
         fastqFiles = self.findFiles(self.rawDataDir, pattern=pattern)
         jobs = []
-        for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]): ##  assume every 2. file is resp. reverse ## DOUBLE CHECK!!
+        for fastqFile, reverse in zip(fastqFiles[::2], fastqFiles[1::2]): ##  assume every 2. file is resp. reverse
             outBasename    = os.path.basename(fastqFile)[:-9]
             outRevBasename = os.path.basename(reverse)[:-9]
-
-            ## TODO: move parameters up to a nice consolidated config section
             trimmomaticCmd = ['java', '-Xmx32G', '-jar', '%s/trimmomatic-0.36.jar' % TrimmomaticsDir,
                               'PE', '-threads', '30', '-phred33',
                               fastqFile, reverse,
@@ -160,13 +154,13 @@ class Pipeline:
             else: lane = extractLane(fastqFile)
             samfilename = '%s/%s_%s_FR_%s.paired_aligned.sam' % (self.dirs['alignOutdir'], self.sample, lane, self.refShort)
             alignCmd = 'bwa mem -M -t 46 -R ' +\
-                        r'"@RG\tID:HGWJW.%s\tSM:%s\tPL:Illumina\tLB:KU_WES\tPU:BGX2.%s" ' % (lane, self.sample, lane) +\
+                        r'"@RG\tID:ID.%s\tSM:%s\tPL:Illumina\tLB:KU_WES\tPU:PU.%s" ' % (lane, self.sample, lane) +\
                         '%s %s %s'  % (self.ref, fastqFile, reverse)
             
             job = Job([alignCmd], run=False)
             if cleanup:
                 job.mark4cleanup(fastqFile, condition=samfilename)
-                job.mark4cleanup(reverse, condition=samfilename) ## delete maybe also unpaired.fastq.gz
+                job.mark4cleanup(reverse, condition=samfilename) 
             job.startProcess(stdout=samfilename)
             jobs.append(job)
 
@@ -177,7 +171,6 @@ class Pipeline:
     def sortSam(self, pattern="*.sam", blocking=False, jvmSpace=32,
                 jvmSpaceDivide=True):
         ## Requires picard module (that sets $PICARD)
-        ## This used to crash on occasion, non-reproducibly. Consider samtools sort if this persists
         jobs = []
         samFiles = self.findFiles(self.dirs['alignOutdir'], pattern=pattern)
         if jvmSpaceDivide: jvmSpace = int(jvmSpace / (len(samFiles)))
@@ -214,7 +207,7 @@ class Pipeline:
         bamFile = self.findFiles(self.dirs['alignOutdir'], pattern="*_Sorted_Merged.bam")[0]
         
         nrBamFile = bamFile[:-4] + '_dedup.bam' ## prob. nicer with os.splitext
-        metricsFile = bamFile[:-4] + '_metrics.txt' ## only works with local picard
+        metricsFile = bamFile[:-4] + '_metrics.txt' 
         dupCmd = ['java', '-Xmx%sG'%jvmSpace, '-jar', self.picardCmd, 'MarkDuplicates',
                   'I=%s'%bamFile, 'O=%s'%nrBamFile, 'REMOVE_DUPLICATES=true', 'M=%s'%metricsFile]
         self.completedJobs.append(Job(dupCmd, mark4del=(bamFile, nrBamFile)))
@@ -228,7 +221,7 @@ class Pipeline:
             process.wait()
             print ("[PIPE:] Finished Qualimap")
             
-    def buildBamIndex(self, jvmSpace=32): ## quite quick (for 99)
+    def buildBamIndex(self, jvmSpace=32): 
         bamFile = self.findFiles(self.dirs['alignOutdir'], pattern="*_dedup.bam")[0]
         bbiCmd = ['java', '-Xmx%sG'%jvmSpace, '-jar', self.picardCmd, 'BuildBamIndex', 'I=%s'%bamFile]
         self.completedJobs.append(Job(bbiCmd))
@@ -269,14 +262,12 @@ class Pipeline:
         recCmd = ['gatk', '--java-options', '"-Xmx%sG"'%jvmSpace, 'HaplotypeCaller',
                   '-R', self.ref,
                   '-I', bamFile, '-O', output,
-                  '--dbsnp', dbsnp, '--genotyping-mode', 'DISCOVERY']#-stand_call_conf 30
+                  '--dbsnp', dbsnp, '--genotyping-mode', 'DISCOVERY']
         if filetype=='gvcf':
-            recCmd.append('-ERC GVCF') ## this seems to cause trouble: "Values for DP annotation not detected for ANY training variant in the input callset. VariantAnnotator may be used to add these annotations" but could also be due to sparse genome in DP
+            recCmd.append('-ERC GVCF') 
         self.completedJobs.append(Job(recCmd, run=True, mark4del=(bamFile, output)))
 
     ## Sorted_merged_dedup_BQSR.vcf ->  Sorted_merged_dedup_BQSR.{recal.vcf, tranches, rplots.R} 
-    ## couldnt test this on "Genome 99": to few data points
-    ## TODO: Deal with gzipped files!
     def variantRecalibrator(self, jvmSpace=32, mode='SNP', pattern="*_HaplotypeCaller"):
         vcfFile = self.findFiles(self.dirs['gatkOutdir'], pattern=pattern + '.' + self.filetype + self.zipped)[0]
         base = os.path.splitext(vcfFile)[0]
@@ -337,8 +328,7 @@ class Pipeline:
         finishedJobs = getLastCheckpoint(self.sample)
         try:
             lastJob = finishedJobs[-1]
-            if self.sample == '120233' and lastJob=='MergeBam':
-                lastJob = 'MarkDuplicates' ## Manual fix
+
             idx = pipelineOrder.index(lastJob)
             print ("Trying to pick up after %s (job idx: %s)"% (lastJob, idx))
             return idx
@@ -398,20 +388,15 @@ def pptime(s):
     return '%02d:%02d:%02d' % (hours, minutes, seconds)
 
 if __name__ == "__main__":
-    restartFromCheckpoint = True
+    restartFromCheckpoint = False
     ## set to False, if you want to start from the beginning
-    #TODO: add new dbSNP version
-    ##first batch of outsource NGS genomes:
-    samples = [10885, 120060, 120067, 120069, 120075, 120129, 120131, 120133, 120136,
-               120164, 120165, 120190, 120195, 120197, 120213, 120233, 120287, 12553,
-               12608, 12657, 12960, 12964, 13024, 13049, 13116, 13119]
 
     if len(sys.argv[-1]) < 3: ## interprete small numbers as job ids
         sampleNr = int(sys.argv[-1])
-        pipe = Pipeline(sampleNr=sampleNr, refShort='hg19', singleLane=False) #refShort='hg38'
+        pipe = Pipeline(sampleNr=sampleNr, refShort='hg19', singleLane=False) 
     else: ## interprete 5 or 6digit numbers as sample ids
         sample = sys.argv[-1]
-        pipe = Pipeline(sample=sample, refShort='hg19', singleLane=False)     #refShort='hg38'
+        pipe = Pipeline(sample=sample, refShort='hg19', singleLane=False)
         
     lastSuccJobIdx = pipelineOrder.index('ApplyBQSR')
     if True:
@@ -429,7 +414,7 @@ if __name__ == "__main__":
 
         ## PICARD
         if pipelineOrder.index('SortSam') > lastSuccJobIdx:
-            pipe.sortSam(jvmSpaceDivide=False) ## consider samtools sort instead, more stable?
+            pipe.sortSam(jvmSpaceDivide=False) 
             pipe.report()
 
         if pipelineOrder.index('MergeBam') > lastSuccJobIdx:
@@ -460,8 +445,7 @@ if __name__ == "__main__":
             pipe.report()
             
     if False:
-        ## Before variant recal: need to do (hierarchical) combineGVCFs, GenotypeGVCFs -> VCF
-        ## see individual shell scripts: varRecal combineGVCFs.sh (runs into Walltime!!! -> do it hierarchically, see )
+        ## Before variant recal: need to do combineGVCFs, GenotypeGVCFs -> VCF
         pipe.filetype='gvcf'
         pipe.zipped = '.gz'
         pipe.variantRecalibrator() ## only works on proper VCF!!!
@@ -471,9 +455,4 @@ if __name__ == "__main__":
     #pipe.variantRecalibrator(pattern='*_recal_SNP', mode='INDEL')
     #pipe.applyVQSR(pattern='*_recal_SNP', mode='INDEL')
 
-#java -jar GenomeAnalysisTK.jar \
-#   -T GenotypeGVCFs \
-#   -R reference.fasta \
-#   --variant sample1.g.vcf \
-#   --variant sample2.g.vcf \
-#   -o output.vcf
+

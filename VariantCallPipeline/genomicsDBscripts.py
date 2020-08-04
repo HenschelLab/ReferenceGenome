@@ -21,8 +21,8 @@ bsub = """#BSUB -n 4
 #BSUB -q general                           
 #BSUB -W 24:00      
 #BSUB -J gDB%s
-#BSUB -o /research/btc_bioinformatic/results/GenomicsDB_JoboutFamilies/gDB%s.out
-#BSUB -e /research/btc_bioinformatic/results/GenomicsDB_JoboutFamilies/gDB%s.err
+#BSUB -o /research/btc_bioinformatic/results/GenomicsDB_Jobout/gDB%s.out
+#BSUB -e /research/btc_bioinformatic/results/GenomicsDB_Jobout/gDB%s.err
 
 module load gatk/4.0.6.0
 

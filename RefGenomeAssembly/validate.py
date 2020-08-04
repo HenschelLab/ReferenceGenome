@@ -1,7 +1,5 @@
 # by maintaining an offset, we can check the corresponding positions between hg19 and hg19uae
-# run this to check the first 10 positions
-# !head /research/btc_bioinformatic/results/AlleleFrequencies/mafUAE_chr1.txt
-# and then run the script
+
 from Bio import SeqIO
 
 alleleFreqDir = '/research/btc_bioinformatic/results/AlleleFrequencies'

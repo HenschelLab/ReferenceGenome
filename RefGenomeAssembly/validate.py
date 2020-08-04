@@ -14,7 +14,7 @@ for refChrom in SeqIO.parse(hg19, 'fasta'):
 for uaeChrom in SeqIO.parse(f'{alleleFreqDir}/hg19uae.fasta', 'fasta'):
     if uaeChrom.description != 'chr1': continue
     break
-#samtools view 13164_001_FR_hg19uae.paired_aligned_Sorted_Merged_dedup.bam chr1:723798-723800|wc -l 
+
 
 
 chromFile = f'{alleleFreqDir}/mafUAE_{uaeChrom.description}.txt'

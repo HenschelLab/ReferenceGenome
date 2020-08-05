@@ -1,6 +1,6 @@
 Running survivor for consensus SVs
 
-SURVIVOR merge sample_files 1000 2 1 1 0 50 10174_merged1.vcf
+SURVIVOR merge sample_files 1000 2 1 1 0 50 sample1_merged1.vcf
 
 SURVIVOR stats mergedFilteredPass.vcf 50 -1 2  Survivorstats.txt
 

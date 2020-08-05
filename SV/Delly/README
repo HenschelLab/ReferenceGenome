@@ -2,22 +2,22 @@ Following delly best practices
 ## https://github.com/dellytools/delly
 ## See Germline calling
 
-  741  conda install -c bioconda -y delly
- 1006  conda activate delly
+ conda install -c bioconda -y delly
+ conda activate delly
   
-  755  git clone https://github.com/dellytools/delly.git ## for exclusion file human.hg19.excl.tsv
-  771  delly call -g /research/btc_bioinformatic/operations/data_masdar/ucsc.hg19.fasta -x /home/ahenschel/Software/delly/excludeTemplates/human.hg19.excl.tsv -o /research/genomicds1/Manta/Delly/${LSB_JOBINDEX}.bcf /research/btc_bioinformatic/results/BatchMissingBams/${LSB_JOBINDEX}/Alignment/${LSB_JOBINDEX}_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam
+ git clone https://github.com/dellytools/delly.git ## for exclusion file human.hg19.excl.tsv
+ delly call -g /research/btc_bioinformatic/operations/data_masdar/ucsc.hg19.fasta -x /home/ahenschel/Software/delly/excludeTemplates/human.hg19.excl.tsv -o /research/genomicds1/Manta/Delly/${LSB_JOBINDEX}.bcf /research/btc_bioinformatic/results/BatchMissingBams/${LSB_JOBINDEX}/Alignment/${LSB_JOBINDEX}_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam
 
 ## merging sites
- 1005  delly merge -o sites.bcf 10*bcf
+ delly merge -o sites.bcf 10*bcf
 
 ## "genotyping"
- 1019  delly call -g /research/btc_bioinformatic/operations/data_masdar/ucsc.hg19.fasta -x /home/ahenschel/Software/delly/excludeTemplates/human.hg19.excl.tsv -v sites.bcf -o 10174.geno.bcf /research/btc_bioinformatic/operations/scratch/10174/Alignment/10174_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam 
- 1052  grep -i delly 10174_merged.vcf |more
- 1062  grep -v '^##' 10174_merged1.vcf| cut -d$'\t' -f11 |cut -d':' -f1 > /tmp/dellyCallset.txt
- 1063  sort /tmp/dellyCallset.txt | uniq -c
- 1070  paste /tmp/mantaCallset.txt /tmp/dellyCallset.txt |more
- 1071  paste /tmp/mantaCallset.txt /tmp/dellyCallset.txt |sort |uniq -c
+ delly call -g /research/btc_bioinformatic/operations/data_masdar/ucsc.hg19.fasta -x /home/ahenschel/Software/delly/excludeTemplates/human.hg19.excl.tsv -v sites.bcf -o 10174.geno.bcf /research/btc_bioinformatic/operations/scratch/10174/Alignment/10174_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam 
+ grep -i delly 10174_merged.vcf |more
+ grep -v '^##' 10174_merged1.vcf| cut -d$'\t' -f11 |cut -d':' -f1 > /tmp/dellyCallset.txt
+ sort /tmp/dellyCallset.txt | uniq -c
+ paste /tmp/mantaCallset.txt /tmp/dellyCallset.txt |more
+ paste /tmp/mantaCallset.txt /tmp/dellyCallset.txt |sort |uniq -c
 
 #creating stats:
 #for i in *.bcf; do echo $i; bcftools view $i |grep -v "^#"|cut -d$'\t' -f5,7|grep PASS|grep '^<' |sort |uniq -c; done
@@ -30,23 +30,22 @@ Running survivor for consensus SVs
 SURVIVOR merge sample_files 1000 2 1 1 0 50 <sample>_merged1.vcf
 
 SURVIVOR stats mergedFilteredPass.vcf 50 -1 2  Survivorstats.txt
-
-(base) [ahenschel@hpc074 Delly]$ bcftools view merged.bcf | grep -c -v '^#'
+$ bcftools view merged.bcf | grep -c -v '^#'
 95934
 
 ## Joint Genotype calling (see bsub scripts)
 
 ## merging all genotyped
-(base) [ahenschel@hpc074 Delly]$ bcftools merge -m id -O b -o merged.bcf *.geno.bcf
+$ bcftools merge -m id -O b -o merged.bcf *.geno.bcf
 
-(base) [ahenschel@hpc074 Delly]$ delly filter -f germline -o germline.bcf merged.bcf
-(base) [ahenschel@hpc074 Delly]$ mv germline.bcf.csi mergedFiltered.bcf.csi
-(base) [ahenschel@hpc074 Delly]$ bcftools view mergedFiltered.bcf | grep -c -v '^#'
+ delly filter -f germline -o germline.bcf merged.bcf
+ mv germline.bcf.csi mergedFiltered.bcf.csi
+ bcftools view mergedFiltered.bcf | grep -c -v '^#'
 25830
-(base) [ahenschel@hpc074 Delly]$ python removeLowQual.py > mergedFilteredPASS.vcf
-(base) [ahenschel@hpc074 Delly]$ grep -v "^#" mergedFilteredPASS.vcf |cut -d$'\t' -f5,7|grep PASS|grep '^<' |sort |uniq -c
+python removeLowQual.py > mergedFilteredPASS.vcf
+grep -v "^#" mergedFilteredPASS.vcf |cut -d$'\t' -f5,7|grep PASS|grep '^<' |sort |uniq -c
   14134 <DEL>	PASS
    1879 <DUP>	PASS
     241 <INS>	PASS
    1766 <INV>	PASS
-(base) [ahenschel@hpc074 Delly]$ 
+

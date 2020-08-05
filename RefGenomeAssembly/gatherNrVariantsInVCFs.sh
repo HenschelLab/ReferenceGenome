@@ -1,4 +1,5 @@
-#find /research/btc_bioinformatic/operations/scratch/ -type f -name "*_HaplotypeCaller.vcf.gz*" > hg19ref_haplotypeCaller.txt
+
+
 declare -a samples
 dirs=( scratch )
 for wdir in "${dirs[@]}"; do

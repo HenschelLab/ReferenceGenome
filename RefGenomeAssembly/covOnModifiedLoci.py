@@ -9,8 +9,8 @@ from subprocess import check_output
 alleleFreqDir = '/research/btc_bioinformatic/results/AlleleFrequencies'
 applicationDir = '/research/btc_bioinformatic/operations/'
 hg19 = '%s/data_masdar/ucsc.hg19.fasta' % applicationDir
-refbam = '/research/btc_bioinformatic/operations/scratch/13164/Alignment/13164_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam'
-ourbam = '/research/btc_bioinformatic/operations/UaeRef/13164/Alignment/13164_001_FR_hg19uae.paired_aligned_Sorted_Merged_dedup.bam'
+refbam = '/research/btc_bioinformatic/operations/scratch/sample/Alignment/sample_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam'
+ourbam = '/research/btc_bioinformatic/operations/UaeRef/sample/Alignment/sample_001_FR_hg19uae.paired_aligned_Sorted_Merged_dedup.bam'
 samtools = '/apps/samtools/samtools-1.2-gcc-4.9.2/bin/samtools'
 
 selChrom = 'chr20'
@@ -21,7 +21,7 @@ for refChrom in SeqIO.parse(hg19, 'fasta'):
 for uaeChrom in SeqIO.parse(f'{alleleFreqDir}/hg19uae.fasta', 'fasta'):
     if uaeChrom.description != selChrom: continue
     break
-#samtools view 13164_001_FR_hg19uae.paired_aligned_Sorted_Merged_dedup.bam chr1:723798-723800|wc -l 
+#samtools view sample_001_FR_hg19uae.paired_aligned_Sorted_Merged_dedup.bam chr1:723798-723800|wc -l 
 
 
 chromFile = f'{alleleFreqDir}/mafUAE_{uaeChrom.description}.txt'

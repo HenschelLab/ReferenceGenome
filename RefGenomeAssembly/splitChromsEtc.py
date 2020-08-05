@@ -28,7 +28,7 @@ for line in open(f'{wdir}/{frqFile}'):
         w = open(chromfile, 'w')
     if maxalt[0] > 0.5 and int(count) > 100:
         w.write(f'{pos}\t{ref}\t{maxalt[0]}\t{maxalt[1]}\n')
-            #649802	CAA	0.590361	CA
+
     prevChrom = chrom
 w.close()
 

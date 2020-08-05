@@ -15,10 +15,6 @@ import time
 
 ## Reference genome must be indexed (bwa -index)
 
-## Example use:  gatk --java-options "-Xmx8G" HaplotypeCaller -R reference.fasta -I input.bam -O output.vcf
-## they possibly need to be re-indexed :'-(
-## gatk IndexFeatureFile -F *.vcf (doesn't seem to work with zipped
-
 
 def extractLane(fname): return re.findall('_L\d\d\d_', os.path.basename(fname))[-1].strip()[-2]
 
@@ -122,8 +118,6 @@ class Pipeline2:
         finishedJobs = getLastCheckpoint(self.sample)
         try:
             lastJob = finishedJobs[-1]
-            if self.sample == '120233' and lastJob=='MergeBam':
-                lastJob = 'MarkDuplicates' ## Manual fix
             idx = pipelineOrder.index(lastJob)
             print ("Trying to pick up after %s (job idx: %s)"% (lastJob, idx))
             return idx

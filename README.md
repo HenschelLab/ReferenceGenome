@@ -18,43 +18,48 @@ Various assumptions regarding the naming conventions of input data are made. See
 For the selection of the most representative sequences 
 * The phylogenetic tree was generated using the identity-by-state distance measure from PLINK v1.90 for creating the distance matrix and BioPythons Phylo module to construct a neighbor joining tree. 
 * The KING v2.2 tool was used to test for inferred relationships among the selected sample.
-The GEMINI v0.30.2 tool was used to annotate each variant by integrating several clinical and functional genome annotations.
+* The GEMINI v0.30.2 tool was used to annotate each variant by integrating several clinical and functional genome annotations.
 For the characterization of the UAE ancestry: 
-Haplogrep v2.1.20 tool is  used to assign the mitochondrial haplogroups and the Yhaplo python module yhaplo.callHaplogroups, is used to detect the Y haplogroups.
+* Haplogrep v2.1.20 tool is  used to assign the mitochondrial haplogroups
+* Yhaplo python module yhaplo.callHaplogroups, is used to detect the Y haplogroups.
 For Structural Variants(SV) calling :
-Manta v1.6.0-0 and Delly v0.8.2 joint genotyping germline Structural Variants  calling workflows parallelized on our in-house High-Performance Computer (HPC) are used.
-For consensus SV call sets from the results of Manta and Delly , the SURVIVOR v1.0.6 tool was used to merge across SV callers and across individuals and generate a union call set and an intersection call set, for which the Structural Variants frequency was calculated
-The tool AnnotSV v2.1, an integrated tool for structural variations annotation was used to annotate the SV calls.
+* Manta v1.6.0-0 and Delly v0.8.2 joint genotyping germline Structural Variants calling workflows parallelized on our in-house High-Performance Computer (HPC) are used.
+For consensus SV call sets from the results of Manta and Delly:
+* SURVIVOR v1.0.6 tool was used to merge across SV callers and across individuals and generate a union call set and an intersection call set, for which the Structural Variants frequency was calculated
+*The tool AnnotSV v2.1, an integrated tool for structural variations annotation was used to annotate the SV calls.
 
-Visual representation of the spatial variability of SNVs, and SVs across the UAE genomes has been generated using Circos v-0.69-8
+* Visual representation of the spatial variability of SNVs, and SVs across the UAE genomes has been generated using Circos v-0.69-8
 
 ## Pipeline for Variant Calling
 
 Pipeline summary to construct single sample (g)vcf:
 `pipeline.py`
+
 #### Part 1:
-* Variant calling
-* QC: FastQC, possibly before and certainly after trimming
-* Trimmomatic
-* Pipeline - HPC
-* Quality control
-* GVCF 
+Tools for data preprocessing:
+* FastQC v0.11.7 tool for quality control.
+* Trimmomatic v0.36 tool, to remove low quality and short reads.
+* BWA-MEM v0.7.12 for mapping the samples against the reference genome.
+* Qualimap v2.2.1 for checking mapping quality and mean coverage per sample.
+* Picard v2.9.4 for marking and removing duplicate reads and sorting the resulting BAM file.
 
 #### Part 2:
-
-* Joint genotype calling with Combined VCF
-
-### Data analysis:
-
 The joint variant calling workflow is designed to run on our in-house High Performance Computing (HPC), using the following tools:
-FastQC v0.11.7 tool for quality control.
-Trimmomatic v0.36 tool, to remove low quality and short reads.
-BWA-MEM v0.7.12 for mapping the samples against the reference genome.
-Qualimap v2.2.1 for checking mapping quality and mean coverage per sample. 
-Picard v2.9.4 for marking and removing duplicate reads and sorting the resulting BAM file.
-Variants were called using the Genome Analysis Toolkit (GATK) v4.0.6.0 GVCF workflow that includesd (BQSR, HaplotypeCaller with the -ERC GVCF , GenomicsDBImport,  GenotypeGVCFs , VQSR).
-SnpEFF v4.3t for functional annotaion of the VCF.
 
+* Variants were called using the Genome Analysis Toolkit (GATK) v4.0.6.0 GVCF workflow that includesd
+ * BQSR
+ * HaplotypeCaller (-ERC GVCF)
+For joint genotyping  on the HPC:
+* GenomicsDBImport: bsub files for region-wise import to genomicsDB are generated 
+*genotypeGVCFsScripts.py
+
+ ** GenotypeGVCFs
+ *Gather vcfs to one 
+ * VQSR
+#### Part 3:
+Variant annotaions
+* SnpEFF v4.3t for functional annotaion of the VCF.
+* GEMINI v0.30.2 tool was used to annotate each variant by integrating several clinical and functional genome annotations.
 
 ### Methods Details
 

@@ -11,7 +11,7 @@ We use GATK version 4.0.6.0 and Python 3.6+. In addition, Anaconda environments 
 ## Assumptions
 Various assumptions regarding the naming conventions of input data are made. See configuration part in `pipeline.py`.
 
-## Pipeline
+## Pipeline for Variant Calling
 
 Pipeline to construct single sample (g)vcf:
 `pipeline.py`
@@ -41,7 +41,8 @@ to its computational expenses - split by 10Mbp
 
 
 ### HPC usage
-We deploy IBM's LSF queuing system, using bsub for job submisssion. bsub scripts are provided in the individual directories and mightt require adaptation to the specific HPC at hand. Note that some bsub scripts
+We deploy IBM's LSF queuing system, using bsub for job submisssion. 
+bsub scripts are provided in the individual directories and mightt require adaptation to the specific HPC at hand. Note that some bsub scripts
 
 
 #Annotation 

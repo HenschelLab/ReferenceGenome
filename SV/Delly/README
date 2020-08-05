@@ -30,13 +30,13 @@ Running survivor for consensus SVs
 SURVIVOR merge sample_files 1000 2 1 1 0 50 <sample>_merged1.vcf
 
 SURVIVOR stats mergedFilteredPass.vcf 50 -1 2  Survivorstats.txt
-$ bcftools view merged.bcf | grep -c -v '^#'
+bcftools view merged.bcf | grep -c -v '^#'
 95934
 
 ## Joint Genotype calling (see bsub scripts)
 
 ## merging all genotyped
-$ bcftools merge -m id -O b -o merged.bcf *.geno.bcf
+bcftools merge -m id -O b -o merged.bcf *.geno.bcf
 
  delly filter -f germline -o germline.bcf merged.bcf
  mv germline.bcf.csi mergedFiltered.bcf.csi

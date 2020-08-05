@@ -1,5 +1,5 @@
 1. create a list of bamfiles as txt file
-2. conda activate manta
+2. conda activate manta (which has manta installed from bioconda)
 3. run createWorkflows.py, make sure sample name is extracted from the filepath, this is quick, do it on a normal machine (without queue, but do ssh hpc074)
 4. this prints out bsub instructions, should look like what is in bsubmaster.sh
 5. take that printout and put it in your bsub file
@@ -17,25 +17,13 @@ To execute the workflow, run the following script and set appropriate options:
 /research/genomicds1/Manta/runWorkflow.py
 
 
-  971  ./runWorkflow.py 
-  972  ll
-  973  cd results/
-  974  ll
-  975  cd stats/
-  976  ll
-  977  more alignmentStatsSummary.txt 
+  971  ./runWorkflow.py
+  977  more alignmentStatsSummary.txt
   978  more svCandidateGenerationStats.tsv
-  979  cd ..
-  980  cd variants/
-  981  ll
-  982  zcat candidateSV.vcf.gz | wc -l
   983  zcat candidateSV.vcf.gz | grep MantaINS |wc -l
   984  zcat candidateSV.vcf.gz | grep MantaINS |more
-  985  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9] |more
   986  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9]" |more
-  987  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3"more
   988  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|more
-  989  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l
   990  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l
   991  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l
   992  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l

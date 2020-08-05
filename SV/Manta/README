@@ -5,39 +5,31 @@
 5. take that printout and put it in your bsub file
 6. bsub < <bsub file>
 7. check success: there should be a file called <sampleID>/results/variants/diploidSV.vcf.gz
+8. Create summary Stats: see mantaStats.*
+8.1. The shell script needs a list of all diploidSV.vcf.gz files
+8.2. The python script creates a pandas spreadsheet from the resulting mantaStats.txt
 
+Provide the reference genome like so:
 (manta) [ahenschel@hpc074 scratch]$ export REFGENOME=/research/btc_bioinformatic/operations/data_masdar/ucsc.hg19.fasta
 (manta) [ahenschel@hpc074 scratch]$ ll $REFGENOME
 -rwxr--r-- 1 gelbait henschel-lab 3199905909 Apr 18  2019 /research/btc_bioinformatic/operations/data_masdar/ucsc.hg19.fasta
-(manta) [ahenschel@hpc074 scratch]$ configManta.py --bam ./10411/Alignment/10411_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam --referenceFasta $REFGENOME --runDir /research/genomicds1/Manta
+(manta) [ahenschel@hpc074 scratch]$ configManta.py --bam <sample>_001_FR_hg19.paired_aligned_Sorted_Merged_dedup.bam --referenceFasta $REFGENOME --runDir /research/genomicds1/Manta
 
 Successfully created workflow run script.
 To execute the workflow, run the following script and set appropriate options:
 
 /research/genomicds1/Manta/runWorkflow.py
-
+This part is computationally expensive, so we run it through bsub, see bsubmaster.sh
 
   971  ./runWorkflow.py
   977  more alignmentStatsSummary.txt
   978  more svCandidateGenerationStats.tsv
   983  zcat candidateSV.vcf.gz | grep MantaINS |wc -l
-  984  zcat candidateSV.vcf.gz | grep MantaINS |more
-  986  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9]" |more
-  988  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|more
-  990  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l
   991  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l
-  992  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9][0-9][0-9]" |cut -f8 -d$'\t' |cut -d ';' -f 3|wc -l
-  993  zcat candidateSV.vcf.gz | grep MantaINS |grep "SVLEN=[0-9][0-9][0-9][0-9]" 
 
 
-
-Creation of consensus sv.vcf
+9. Creation of consensus sv.vcf
 
  1002  python aggregateSVruns.py > sv.vcf
- 1003  wc -l sv.vcf
- 1004  more sv.vcf 
- 1005  zcat 10187/results/variants/diploidSV.vcf.gz |head -1000| grep "^#" > header.vcf
  1006  cat header.vcf sv.vcf > sv2.vcf
- 1007  more sv2.vcf 
- 1008  rm header.vcf 
- 1009  mv sv2.vcf sv.vcf 
+

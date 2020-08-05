@@ -8,6 +8,7 @@ GATK requires a number of additional support files, including a reference genome
 We use hg19, and locate it as per configuration in pipeline.py.
 We use GATK version 4.0.6.0 and Python 3.6+. In addition, Anaconda environments are used.
 
+
 ## Assumptions
 Various assumptions regarding the naming conventions of input data are made. See configuration part in `pipeline.py`.
 

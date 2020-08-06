@@ -30,14 +30,14 @@ Tools for data preprocessing:
 The joint variant calling workflow is designed to run on our in-house High Performance Computing (HPC), using the following tools:
 
 * Variants were called using the Genome Analysis Toolkit (GATK) v4.0.6.0 GVCF workflow that included
-** BQSR
-**HaplotypeCaller (-ERC GVCF)
+* BQSR
+* HaplotypeCaller (-ERC GVCF)
 
 For joint genotyping  on the HPC:
 The use of GenomicsDB and Joint genotype calling, requires parallelization along genome regions due to its computational expenses  so we split by 10Mbp 
-* GenomicsDBImport: bsub files for region-wise import to genomicsDB are generated 'genomicsDBscripts.py'
-* GenotypeGVCFs: bsub files for region-wise joint gentotyping bsub files for region-wise are generated  'genotypeGVCFsScripts.py'
-* Gather all vcfs genetared from the region split GenotypeGVCFs to one vcf file  'gatherVCFs.sh'
+* GenomicsDBImport: bsub files for region-wise import to genomicsDB are generated, 'genomicsDBscripts.py'
+* GenotypeGVCFs: bsub files for region-wise joint gentotyping bsub files for region-wise are generated,  'genotypeGVCFsScripts.py'
+* Gather all vcfs genetared from the region split GenotypeGVCFs to one vcf file,  'gatherVCFs.sh'
 * VQSR is then applied to the the gathered VCF file 'pipeline_VQSR.py'
 
 #### Part 3:
@@ -64,15 +64,7 @@ For consensus SV call sets from the results of Manta and Delly:
 ### HPC usage
 
 * We deploy IBM's LSF queuing system, using bsub for job submisssion. 
-* bsub scripts are provided in the individual directories and mightt require adaptation to the specific HPC at hand.
-
-
-### Results
-* Alignment statistics coverage
-* Joint genotyping
-* 29M variant loci discovered.
-* Novel variants
-* Structural variants
+* bsub scripts are provided in the individual directories and might require adaptation to the specific HPC at hand.
 
 ### Variant reduction (reference hg19 vs UAE):
 * We compare the number of called variants with respect to two reference genome: 1. hg19 and 2. our own (UAERG).
@@ -80,4 +72,4 @@ For consensus SV call sets from the results of Manta and Delly:
 
 * Lists the number of variants for selected genomes, once for reference, `run concatVariantStats.py`
 which generates a single summary spreadsheet (variantResults.csv), what eventually is reported as Table 3 in the manuscript.
-`     
+     
